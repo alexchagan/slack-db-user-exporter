@@ -4,12 +4,11 @@ from datetime import datetime
 from pymongo import MongoClient
 from slack_sdk import WebClient
 
-MONGO_URI = os.getenv("MONGO_URI")
-DB_NAME = os.getenv("DB_NAME")
-COLLECTION_NAME = os.getenv("COLLECTION_NAME")
-
-SLACK_API_TOKEN = os.getenv("SLACK_API_TOKEN")
-SLACK_CHANNEL = os.getenv("SLACK_CHANNEL")
+MONGO_URI = os.environ["MONGO_URI"]
+DB_NAME = os.environ["DB_NAME"]
+COLLECTION_NAME = os.environ["COLLECTION_NAME"]
+SLACK_API_TOKEN = os.environ["SLACK_API_TOKEN"]
+SLACK_CHANNEL = os.environ["SLACK_CHANNEL"]
 
 client = MongoClient(MONGO_URI)
 db = client[DB_NAME]
