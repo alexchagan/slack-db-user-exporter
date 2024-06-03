@@ -1,6 +1,6 @@
 import csv
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from pymongo import MongoClient
 from slack_sdk import WebClient
 
@@ -10,20 +10,34 @@ COLLECTION_NAME = os.environ["COLLECTION_NAME"]
 SLACK_API_TOKEN = os.environ["SLACK_API_TOKEN"]
 SLACK_CHANNEL = os.environ["SLACK_CHANNEL"]
 
+file_format = 'xlsx'
+
 client = MongoClient(MONGO_URI)
 db = client[DB_NAME]
 collection = db[COLLECTION_NAME]
 
+today = datetime.now().date()
+last_sunday = today - timedelta(days=today.weekday() + 1)
+start_timestamp = datetime.combine(last_sunday, datetime.min.time())
+end_timestamp = datetime.combine(last_sunday, datetime.max.time())
+
+query = {
+    "createdAt": {
+        "$gte": start_timestamp,
+        "$lte": end_timestamp
+    }
+}
+
 projection = {"name": 1, "email": 1}
-users = collection.find({}, projection)
+users = collection.find(query, projection)
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-csv_filename = f"user_data_{timestamp}.csv"
-csv_path = os.path.join(os.getcwd(), csv_filename)
+target_filename = f"user_data_{timestamp}.{file_format}"
+target_path = os.path.join(os.getcwd(), target_filename)
 
-with open(csv_path, "w", newline="") as csv_file:
+with open(target_path, "w", newline="") as file:
     fieldnames = ["_id","name","email"]  
-    writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+    writer = csv.DictWriter(file, fieldnames=fieldnames)
     writer.writeheader()
     for user in users:
         writer.writerow(user)
@@ -31,14 +45,14 @@ with open(csv_path, "w", newline="") as csv_file:
 slack_client = WebClient(token=SLACK_API_TOKEN)
 
 try:
-    with open(csv_path, "rb") as csv_file:
+    with open(target_path, "rb") as file:
         response = slack_client.files_upload_v2(
             channels=SLACK_CHANNEL,
-            file=csv_file,
-            title=csv_filename,
+            file=file,
+            title=target_filename,
         )
-        print("CSV file uploaded to Slack successfully.")
+        print(f"{file_format} file uploaded to Slack successfully.")
 except Exception as e:
-    print(f"Error uploading CSV file to Slack: {str(e)}")
+    print(f"Error uploading {file_format} file to Slack: {str(e)}")
 
-os.remove(csv_path)
+os.remove(target_path)
