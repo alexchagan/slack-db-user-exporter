@@ -10,16 +10,16 @@ COLLECTION_NAME = os.environ["COLLECTION_NAME"]
 SLACK_API_TOKEN = os.environ["SLACK_API_TOKEN"]
 SLACK_CHANNEL = os.environ["SLACK_CHANNEL"]
 
-file_format = 'xlsx'
+file_format = 'csv'
 
 client = MongoClient(MONGO_URI)
 db = client[DB_NAME]
 collection = db[COLLECTION_NAME]
 
 today = datetime.now().date()
-last_sunday = today - timedelta(days=today.weekday() + 1)
+last_sunday = today - timedelta(weeks=1)
 start_timestamp = datetime.combine(last_sunday, datetime.min.time())
-end_timestamp = datetime.combine(last_sunday, datetime.max.time())
+end_timestamp = datetime.combine(today, datetime.max.time())
 
 query = {
     "createdAt": {
